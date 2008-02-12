@@ -1,0 +1,106 @@
+= acts_as_viewed
+
+The ultimate viewing system for ActiveRecord models. 
+This plugin allow to keep the view count of objects. The views are only counted one time by IP address or User. The viewer class can be changed from User to whatever you want. 
+Highly flexible and configurable, while easy to use with the defaults. 
+Creates all the needed associations for easy access to everything. 
+
+Comes complete with the needed migrations code to make it easy to add to any project.
+
+Note: the code are based in the excellent acts_as_rated plugin. 
+
+== Features
+
+* Keep the view count to any model
+* Optionally add the views field to the viewed objects to optimize speed
+* Can work with the added views field or just using direct SQL count calls
+* Use any model as the viewer (defaults to User)
+* Find objects by viewer
+* Check if an object is viewed by a specific viewer.
+
+== Basic Details
+
+Install
+
+* script/plugin install svn://rubyforge.org/var/svn/acts-as-viewed/trunk
+* gem install - <b>coming soon</b>
+
+Rubyforge project
+
+* http://rubyforge.org/projects/acts-as-viewed
+
+RDocs
+
+* http://acts-as-viewed.rubyforge.org
+
+Subversion
+
+* svn://rubyforge.org/var/svn/acts-as-viewed
+
+Agile Web Development directory
+
+* http://www.agilewebdevelopment.com/plugins/acts_as_viewed
+
+My blog with some comments about the plugin
+
+* http://www.do2.com.ar
+
+
+BUGS & FEEDBACK
+===============
+
+Bug reports (as well as patches) and feedback are very welcome. Please send it to
+damianmarti@gmail.com
+
+== TODO
+* Test
+
+== Example of usage:
+
+=== Simple rating system
+
+   class Movie < ActiveRecord::Base
+     acts_as_viewed
+   end
+
+   In a controller:
+
+   bill = User.find_by_name 'bill'
+   batman = Movie.find_by_title 'Batman'
+   toystory  = Movie.find_by_title 'Toy Story'
+
+   batman.view request.remote_addr, bill
+   toystory.view  request.remote_addr, bill
+
+   batman.view_count     # => 1
+
+=== Migration 
+See also the detailed documentation for the <tt>acts_as_viewed</tt> method on how to declare it, and the rest of the documentation for how to generate the migration columns/files and how to use it.
+
+  class AddViewingTables < ActiveRecord::Migration
+    def self.up
+      ActiveRecord::Base.create_viewings_table
+      
+      # Movies table has the columns for the viewings added while it's created
+      create_table(:movies) do |t|
+		t.column :title, :text
+		Movie.generate_viewings_columns t
+      end
+
+      # Movies table has the columns for the viewings added, but after the fact, using ALTER TABLE calls.
+      # Usually used if the model already exist and we want to add the viewings after the fact
+      create_table(:movies) do |t|
+		t.column :title, :text
+      end
+      Movie.add_viewings_columns
+    end
+    
+    def self.down
+      # Remove the columns we added
+      Movie.remove_viewings_columns
+      
+      drop_table :movies rescue nil
+
+      ActiveRecord::Base.drop_viewings_table
+    end
+  end  
