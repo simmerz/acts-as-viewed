@@ -123,21 +123,20 @@ module ActiveRecord #:nodoc:
         def view ip, viewer = nil
           # Sanity checks for the parameters
           viewing_class = acts_as_viewed_options[:viewing_class].constantize
-          if !(acts_as_viewed_options[:viewer_class].constantize === viewer)
+          if viewer && !(acts_as_viewed_options[:viewer_class].constantize === viewer) 
             raise ViewedError, "the viewer object must be the one used when defining acts_as_viewed (or a descendent of it). other objects are not acceptable"
           end
-          raise ViewedError, "must receive a viewer as parameter" if (viewer.nil? || viewer.id.nil?)
-          
+                    
           viewing_class.transaction do
             if !viewed_by? ip, viewer
-              view = viewing_class.new
-              view.viewer_id = viewer.id
+              view = viewing_class.new              
+              view.viewer_id = viewer.id if viewer && !viewer.id.nil?
               view.ip = ip
               viewings << view
               target = self if attributes.has_key? 'views'
               target.views = ( (target.views || 0) + 1 ) if target 
               view.save
-              target.save if target
+              target.save_without_validation if target
               return true
             else
               return false
@@ -147,13 +146,10 @@ module ActiveRecord #:nodoc:
 
         # Check if an item was already viewed by the given viewer
         def viewed_by? ip, viewer = nil
-          viewing_class = acts_as_viewed_options[:viewing_class].constantize
-          if !(acts_as_viewed_options[:viewer_class].constantize === viewer)
-             raise ViewedError, "The viewer object must be the one used when defining acts_as_viewed (or a descendent of it). other objects are not acceptable" 
+          if viewer && !viewer.nil? && !(acts_as_viewed_options[:viewer_class].constantize === viewer) 
+            raise ViewedError, "the viewer object must be the one used when defining acts_as_viewed (or a descendent of it). other objects are not acceptable"
           end
-          raise ViewedError, "Viewer must be a valid and existing object" if viewer.nil? || viewer.id.nil?
-          raise ViewedError, 'Viewer must be a valid viewer' if !viewing_class.column_names.include? "viewer_id"
-          if viewer 
+          if viewer && !viewer.id.nil? 
             return viewings.count(["viewer_id = '#{viewer.id}' or ip = '#{ip}'"]) > 0
           else
             return viewings.count(["ip = '#{ip}'"]) > 0

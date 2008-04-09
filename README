@@ -69,8 +69,8 @@ damianmarti@gmail.com
    batman = Movie.find_by_title 'Batman'
    toystory  = Movie.find_by_title 'Toy Story'
 
-   batman.view request.remote_addr, bill
-   toystory.view  request.remote_addr, bill
+   batman.view request.remote_ip, bill
+   toystory.view  request.remote_ip, bill
 
    batman.view_count     # => 1
 
